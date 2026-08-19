@@ -5,6 +5,7 @@ bundle:
 include:
   - resources/pipeline.yml
   - resources/job.yml
+  - resources/alerts.yml
 
 variables:
   catalog:
@@ -12,12 +13,6 @@ variables:
 
   storage_account:
     description: Storage account del ambiente
-
-  alert_fallos_id:
-    description: Alert ID para fallos
-
-  alert_slo_id:
-    description: Alert ID para SLO
 
   warehouse_id:
     description: SQL Warehouse del ambiente
@@ -34,8 +29,6 @@ targets:
     variables:
       catalog: adbdep_0013
       storage_account: adlsproject13dev2
-      alert_fallos_id: "1821046379089397"
-      alert_slo_id: "1821046379089402"
       warehouse_id: "361ec3e9390e2a86"
 
   uat:
@@ -48,6 +41,4 @@ targets:
     variables:
       catalog: adbuat_0013
       storage_account: adlsproject13uat2
-      alert_fallos_id: "2584593029264338"
-      alert_slo_id: "2584593029264339"
       warehouse_id: "7405614611005137"

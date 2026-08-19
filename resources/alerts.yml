@@ -1,0 +1,106 @@
+resources:
+  alerts:
+
+    alert_fallos:
+      display_name: ${bundle.target}_alert_fallos
+
+      query_text: |
+        SELECT COUNT(*) AS failed_count
+        FROM ${var.catalog}.control.etl_run_log
+        WHERE status = 'FAILED'
+          AND created_at >= current_timestamp() - INTERVAL 1 HOUR
+
+      warehouse_id: ${var.warehouse_id}
+
+      evaluation:
+        comparison_operator: GREATER_THAN
+
+        source:
+          name: total_fallos
+
+        threshold:
+          value:
+            double_value: 0
+
+        notification:
+          notify_on_ok: false
+          subscriptions:
+            - user_email: mercedesvargas945@gmail.com
+            - user_email: ospina.oscard13@gmail.com
+
+      schedule:
+        pause_status: PAUSED
+        quartz_cron_schedule: "0 0 * * * ?"
+        timezone_id: America/Bogota
+
+
+    alert_slo:
+      display_name: ${bundle.target}_slo_duration
+
+      query_text: |
+        WITH pipeline_runs AS (
+            SELECT
+                run_id,
+                pipeline_name,
+
+                MIN(start_ts) AS pipeline_start_ts,
+                MAX(end_ts) AS pipeline_end_ts,
+
+                TIMESTAMPDIFF(
+                    SECOND,
+                    MIN(start_ts),
+                    MAX(end_ts)
+                ) AS duration_sec
+
+            FROM ${var.catalog}.control.etl_run_log
+
+            WHERE pipeline_name = 'ingest_y_transform'
+
+            GROUP BY
+                run_id,
+                pipeline_name
+        ),
+
+        last_run AS (
+
+            SELECT *,
+                ROW_NUMBER() OVER (
+                    ORDER BY pipeline_end_ts DESC
+                ) AS rn
+            FROM pipeline_runs
+        )
+
+        SELECT
+            CASE
+                WHEN duration_sec > 1800 THEN 1
+                ELSE 0
+            END AS slo_breached,
+
+            run_id,
+            duration_sec
+
+        FROM last_run
+
+        WHERE rn = 1
+
+      warehouse_id: ${var.warehouse_id}
+
+      evaluation:
+        comparison_operator: GREATER_THAN
+
+        source:
+          name: max_duration_sec
+
+        threshold:
+          value:
+            double_value: 900
+
+        notification:
+          notify_on_ok: false
+          subscriptions:
+            - user_email: mercedesvargas945@gmail.com
+
+      schedule:
+        pause_status: PAUSED
+        quartz_cron_schedule: "0 0 * * * ?"
+        timezone_id: America/Bogota

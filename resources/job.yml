@@ -32,7 +32,7 @@ resources:
             - task_key: control_log
 
           alert_task:
-            alert_id: ${var.alert_fallos_id}
+            alert_id: ${resources.alerts.alert_fallos.id}
             warehouse_id: ${var.warehouse_id}
 
             subscribers:
@@ -45,7 +45,7 @@ resources:
             - task_key: control_log
 
           alert_task:
-            alert_id: ${var.alert_slo_id}
+            alert_id: ${resources.alerts.alert_slo.id}
             warehouse_id: ${var.warehouse_id}
 
             subscribers:

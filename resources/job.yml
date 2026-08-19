@@ -1,0 +1,57 @@
+resources:
+  jobs:
+    Job_complete:
+      name: ${bundle.target}_Job_complete
+
+      tasks:
+
+        # 1. Ejecuta el Lakeflow Declarative Pipeline
+        - task_key: pipeline_txn
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.ingest_y_transform.id}
+
+          max_retries: 1
+          min_retry_interval_millis: 900000
+
+
+        # 2. Registra el resultado de la ejecución
+        # Se ejecuta incluso si pipeline_txn falla
+        - task_key: control_log
+          depends_on:
+            - task_key: pipeline_txn
+
+          run_if: ALL_DONE
+
+          notebook_task:
+            notebook_path: ../monitoring/etl_run_log.ipynb
+
+            base_parameters:
+              CATALOG: ${var.catalog}
+              STORAGE: ${var.storage_account}
+
+
+        # 3. Valida si existieron fallos
+        - task_key: alert_fallos
+          depends_on:
+            - task_key: control_log
+
+          alert_task:
+            alert_id: "1821046379089397"
+            warehouse_id: 361ec3e9390e2a86
+
+            subscribers:
+              - user_name: mercedesvargas945@gmail.com
+              - user_name: ospina.oscard13@gmail.com
+
+
+        # 4. Valida el SLO de duración
+        - task_key: slo_duration
+          depends_on:
+            - task_key: control_log
+
+          alert_task:
+            alert_id: "1821046379089402"
+            warehouse_id: 361ec3e9390e2a86
+
+            subscribers:
+              - user_name: mercedesvargas945@gmail.com

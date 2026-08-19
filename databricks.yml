@@ -1,0 +1,38 @@
+
+bundle:
+  name: dlt_databricks
+
+include:
+  - resources/pipeline.yml
+  - resources/job.yml
+
+variables:
+  catalog:
+    description: Catalogo del ambiente
+
+  storage_account:
+    description: Storage account del ambiente
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      host: https://adb-7405614611005137.17.azuredatabricks.net
+      profile: DEV
+
+    variables:
+      catalog: adbdep_0013
+      storage_account: adlsproject13dev2
+
+  uat:
+    mode: development
+
+    workspace:
+      host: https://adb-7405609956465058.18.azuredatabricks.net
+      profile: UAT
+
+    variables:
+      catalog: adbuat_0013
+      storage_account: adlsproject13uat2

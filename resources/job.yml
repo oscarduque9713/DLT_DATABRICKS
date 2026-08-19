@@ -36,22 +36,21 @@ resources:
             - task_key: control_log
 
           alert_task:
-            alert_id: "1821046379089397"
-            warehouse_id: 361ec3e9390e2a86
+            alert_id: ${var.alert_fallos_id}
+            warehouse_id: ${var.warehouse_id}
 
-            subscribers:
-              - user_name: mercedesvargas945@gmail.com
-              - user_name: ospina.oscard13@gmail.com
+          subscribers:
+            - user_name: mercedesvargas945@gmail.com
+            - user_name: ospina.oscard13@gmail.com
 
 
-        # 4. Valida el SLO de duración
-        - task_key: slo_duration
-          depends_on:
-            - task_key: control_log
+          - task_key: slo_duration
+            depends_on:
+              - task_key: control_log
 
-          alert_task:
-            alert_id: "1821046379089402"
-            warehouse_id: 361ec3e9390e2a86
+            alert_task:
+              alert_id: ${var.alert_slo_id}
+                warehouse_id: ${var.warehouse_id}
 
             subscribers:
               - user_name: mercedesvargas945@gmail.com

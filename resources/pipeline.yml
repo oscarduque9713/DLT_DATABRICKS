@@ -5,7 +5,7 @@ resources:
       name: ${bundle.target}_ingest_y_transform
 
       catalog: ${var.catalog}
-      schema: default
+      schema: ly_bronze
 
       # Pipeline ejecutado con serverless compute
       serverless: true

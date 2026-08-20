@@ -16,7 +16,7 @@ resources:
         comparison_operator: GREATER_THAN
 
         source:
-          name: total_fallos
+          name: failed_count
 
         threshold:
           value:
@@ -72,7 +72,7 @@ resources:
 
         SELECT
             CASE
-                WHEN duration_sec > 1800 THEN 1
+                WHEN duration_sec > 900 THEN 1
                 ELSE 0
             END AS slo_breached,
 
@@ -89,7 +89,7 @@ resources:
         comparison_operator: GREATER_THAN
 
         source:
-          name: max_duration_sec
+          name: slo_breached
 
         threshold:
           value:

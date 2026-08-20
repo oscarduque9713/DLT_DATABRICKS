@@ -1,0 +1,66 @@
+name: Databricks CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+      - uat
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: dev
+
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Check authentication
+        run: databricks current-user me
+
+      - name: Validate DEV
+        run: databricks bundle validate -t dev
+
+      - name: Deploy DEV
+        run: databricks bundle deploy -t dev
+
+
+  deploy-uat:
+    if: github.ref == 'refs/heads/uat'
+    runs-on: ubuntu-latest
+    environment: uat
+
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Check authentication
+        run: databricks current-user me
+
+      - name: Validate UAT
+        run: databricks bundle validate -t uat
+
+      - name: Deploy UAT
+        run: databricks bundle deploy -t uat

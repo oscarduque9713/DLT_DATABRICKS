@@ -24,7 +24,6 @@ targets:
 
     workspace:
       host: https://adb-7405614611005137.17.azuredatabricks.net
-      profile: DEV
 
     variables:
       catalog: adbdep_0013
@@ -36,7 +35,6 @@ targets:
 
     workspace:
       host: https://adb-7405609956465058.18.azuredatabricks.net
-      profile: UAT
 
     variables:
       catalog: adbuat_0013

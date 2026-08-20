@@ -10,7 +10,7 @@ resources:
             pipeline_id: ${resources.pipelines.ingest_y_transform.id}
 
           max_retries: 1
-          min_retry_interval_millis: 900000
+          min_retry_interval_millis: 60000
 
         - task_key: governance_security
           depends_on:

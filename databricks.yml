@@ -41,4 +41,4 @@ targets:
     variables:
       catalog: adbuat_0013
       storage_account: adlsproject13uat2
-      warehouse_id: "7405614611005137"
+      warehouse_id: "8c9bea6c5a5aaef5"

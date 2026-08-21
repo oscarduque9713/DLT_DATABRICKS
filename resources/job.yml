@@ -10,12 +10,25 @@ resources:
             pipeline_id: ${resources.pipelines.ingest_y_transform.id}
 
           max_retries: 1
-          min_retry_interval_millis: 900000
+          min_retry_interval_millis: 60000
 
+        - task_key: governance_security
+          depends_on:
+            - task_key: pipeline_txn
+
+          sql_task:
+            file:
+              path: ../governance/security.sql
+              source: WORKSPACE
+
+            warehouse_id: ${var.warehouse_id}
+
+            parameters:
+              CATALOG: ${var.catalog}
 
         - task_key: control_log
           depends_on:
-            - task_key: pipeline_txn
+            - task_key: governance_security
 
           run_if: ALL_DONE
 

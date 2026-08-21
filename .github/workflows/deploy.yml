@@ -30,7 +30,9 @@ jobs:
         uses: databricks/setup-cli@main
 
       - name: Check authentication
-        run: databricks current-user me
+        run: |
+          cd /tmp
+          databricks current-user me
 
       - name: Validate DEV
         run: databricks bundle validate -t dev
@@ -57,7 +59,9 @@ jobs:
         uses: databricks/setup-cli@main
 
       - name: Check authentication
-        run: databricks current-user me
+        run: |
+          cd /tmp
+          databricks current-user me
 
       - name: Validate UAT
         run: databricks bundle validate -t uat

@@ -1,7 +1,7 @@
 
 ## importar librerias
 from pyspark import pipelines as dp
-from pyspark.sql.functions import col, current_timestamp
+from pyspark.sql.functions import col, current_timestamp, sha2, concat_ws
 from pyspark.sql.types import StructType, StructField, StringType
 
 
@@ -40,11 +40,21 @@ def txn_reprocess():
         .schema(txn_schema)
         .load(source_path_transactions_re)
         .select( "*", 
-                    col("_metadata.file_name").alias("source_file"), 
-                    col("_metadata.file_modification_time").alias("file_mod_time"), 
-                    current_timestamp().alias("ingestion_ts") 
-                    )
+            col("_metadata.file_name").alias("source_file"),
+            col("_metadata.file_modification_time").alias("file_mod_time"),
+            col("_metadata.file_size").alias("file_size"),
+            current_timestamp().alias("ingestion_ts"),
+            sha2(
+                concat_ws(
+                "||",
+                col("_metadata.file_name"),
+                col("_metadata.file_size"),
+                col("_metadata.file_modification_time").cast("string")
+                ),
+                256
+            ).alias("file_fingerprint")
     )
+)
 
 
 #### PARA EL HISTORICO ONCE TRUE
@@ -76,6 +86,16 @@ def txn_historical_backfill():
             
             col("_metadata.file_name").alias("source_file"),
             col("_metadata.file_modification_time").alias("file_mod_time"),
-            current_timestamp().alias("ingestion_ts")
+            col("_metadata.file_size").alias("file_size"),
+            current_timestamp().alias("ingestion_ts"),
+            sha2(
+                concat_ws(
+                "||",
+                col("_metadata.file_name"),
+                col("_metadata.file_size"),
+                col("_metadata.file_modification_time").cast("string")
+                ),
+                256
+            ).alias("file_fingerprint")
         )
     )

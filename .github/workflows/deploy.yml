@@ -67,3 +67,4 @@ jobs:
 
       - name: Deploy UAT
         run: databricks bundle deploy -t uat
+        

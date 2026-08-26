@@ -6,6 +6,8 @@ on:
       - develop
       - uat
 
+  workflow_dispatch: 
+
 permissions:
   id-token: write
   contents: read

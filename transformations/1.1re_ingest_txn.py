@@ -45,3 +45,31 @@ def txn_reprocess():
                     current_timestamp().alias("ingestion_ts") 
                     )
     )
+
+
+#### PARA EL HISTORICO ONCE TRUE
+source_path_transactions_historical = (
+    f"{source_path}/src_txn_hist"
+)
+
+
+@dp.append_flow(
+    name="txn_historical_backfill",
+    target=f"{catalog}.ly_bronze.txn_RW",
+    once=True,
+    comment="Carga histórica de transacciones desde Parquet"
+)
+def txn_historical_backfill():
+
+    return (
+        spark.read
+        .format("parquet")
+        .schema(txn_schema)
+        .load(source_path_transactions_historical)
+        .select(
+            "*",
+            col("_metadata.file_name").alias("source_file"),
+            col("_metadata.file_modification_time").alias("file_mod_time"),
+            current_timestamp().alias("ingestion_ts")
+        )
+    )

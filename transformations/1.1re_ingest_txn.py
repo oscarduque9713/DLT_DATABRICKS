@@ -1,7 +1,7 @@
 
 ## importar librerias
 from pyspark import pipelines as dp
-from pyspark.sql.functions import col, current_timestamp
+from pyspark.sql.functions import col, current_timestamp, sha2, concat_ws
 from pyspark.sql.types import StructType, StructField, StringType
 
 
@@ -40,17 +40,25 @@ def txn_reprocess():
         .schema(txn_schema)
         .load(source_path_transactions_re)
         .select( "*", 
-                    col("_metadata.file_name").alias("source_file"), 
-                    col("_metadata.file_modification_time").alias("file_mod_time"), 
-                    current_timestamp().alias("ingestion_ts") 
-                    )
+            col("_metadata.file_name").alias("source_file"),
+            col("_metadata.file_modification_time").alias("file_mod_time"),
+            col("_metadata.file_size").alias("file_size"),
+            current_timestamp().alias("ingestion_ts"),
+            sha2(
+                concat_ws(
+                "||",
+                col("_metadata.file_name"),
+                col("_metadata.file_size"),
+                col("_metadata.file_modification_time").cast("string")
+                ),
+                256
+            ).alias("file_fingerprint")
     )
+)
 
 
 #### PARA EL HISTORICO ONCE TRUE
-source_path_transactions_historical = (
-    f"{source_path}/src_txn_hist"
-)
+source_path_transactions_historical = f"{source_path}/src_txn_cdc_hist"
 
 
 @dp.append_flow(
@@ -64,12 +72,30 @@ def txn_historical_backfill():
     return (
         spark.read
         .format("parquet")
-        .schema(txn_schema)
         .load(source_path_transactions_historical)
         .select(
-            "*",
+            col("account_id").cast("string").alias("account_id"),
+            col("amount").cast("string").alias("amount"),
+            col("channel").cast("string").alias("channel"),
+            col("currency").cast("string").alias("currency"),
+            col("merchant").cast("string").alias("merchant"),
+            col("op").cast("string").alias("op"),
+            col("txn_id").cast("string").alias("txn_id"),
+            col("txn_ts").cast("string").alias("txn_ts"),
+            col("updated_at").cast("string").alias("updated_at"),
+            
             col("_metadata.file_name").alias("source_file"),
             col("_metadata.file_modification_time").alias("file_mod_time"),
-            current_timestamp().alias("ingestion_ts")
+            col("_metadata.file_size").alias("file_size"),
+            current_timestamp().alias("ingestion_ts"),
+            sha2(
+                concat_ws(
+                "||",
+                col("_metadata.file_name"),
+                col("_metadata.file_size"),
+                col("_metadata.file_modification_time").cast("string")
+                ),
+                256
+            ).alias("file_fingerprint")
         )
     )

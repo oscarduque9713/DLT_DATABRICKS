@@ -62,10 +62,18 @@ def txn_historical_backfill():
     return (
         spark.read
         .format("parquet")
-        .schema(txn_schema)
         .load(source_path_transactions_historical)
         .select(
-            "*",
+            col("account_id").cast("string").alias("account_id"),
+            col("amount").cast("string").alias("amount"),
+            col("channel").cast("string").alias("channel"),
+            col("currency").cast("string").alias("currency"),
+            col("merchant").cast("string").alias("merchant"),
+            col("op").cast("string").alias("op"),
+            col("txn_id").cast("string").alias("txn_id"),
+            col("txn_ts").cast("string").alias("txn_ts"),
+            col("updated_at").cast("string").alias("updated_at"),
+            
             col("_metadata.file_name").alias("source_file"),
             col("_metadata.file_modification_time").alias("file_mod_time"),
             current_timestamp().alias("ingestion_ts")

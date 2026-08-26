@@ -48,7 +48,7 @@ def txn_reprocess():
 
 
 #### PARA EL HISTORICO ONCE TRUE
-source_path_transactions_historical = f"{source_path}/src_txn_hist"
+source_path_transactions_historical = f"{source_path}/src_txn_cdc_hist"
 
 
 @dp.append_flow(

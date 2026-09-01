@@ -1,0 +1,9 @@
+{
+  "oidc_policy": {
+    "issuer": "https://token.actions.githubusercontent.com",
+    "audiences": [
+      "https://adb-7405618768922549.9.azuredatabricks.net/oidc/v1/token"
+    ],
+    "subject": "repo:oscarduque9713@217395310/DLT_DATABRICKS@1338923839:environment:prod"
+  }
+}

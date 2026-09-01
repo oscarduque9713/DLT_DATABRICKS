@@ -37,3 +37,8 @@ variable "terraform_principal" {
   description = "Service Principal used by Terraform to manage PROD infrastructure"
   type        = string
 }
+
+variable "warehouse_id" {
+  description = "SQL Warehouse used by Terraform to execute SQL DDL in PROD"
+  type        = string
+}

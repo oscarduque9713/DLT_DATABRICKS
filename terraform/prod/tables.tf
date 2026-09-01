@@ -6,6 +6,8 @@ resource "databricks_sql_table" "etl_run_log" {
   table_type         = "MANAGED"
   data_source_format = "DELTA"
 
+  warehouse_id = var.warehouse_id
+
   column {
     name = "run_id"
     type = "STRING"

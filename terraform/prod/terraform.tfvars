@@ -13,3 +13,5 @@ access_connector_id = "/subscriptions/ca4106cb-8890-42ab-8df1-318b2a6f2cec/resou
 account_id = "ec87ce8b-3ae9-4f42-aa75-8afbefb8bf06"
 
 terraform_principal = "daf5de05-b8f7-4fc2-976d-9bc3a788256b"
+
+warehouse_id = "7405618768922549"

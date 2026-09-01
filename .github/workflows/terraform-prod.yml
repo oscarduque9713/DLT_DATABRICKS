@@ -1,7 +1,6 @@
 name: Terraform PROD Plan
 
 on:
-  on:
   workflow_dispatch:
 
   push:

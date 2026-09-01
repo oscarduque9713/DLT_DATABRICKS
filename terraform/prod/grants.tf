@@ -1,15 +1,18 @@
 
+# Grants the deployment principal access to the PROD catalog.
 resource "databricks_grant" "prod_catalog_sp" {
   catalog = databricks_catalog.prod.name
 
   principal = var.deploy_principal
 
+  # Allows the principal to access and use the catalog.
   privileges = [
     "USE_CATALOG"
   ]
 }
 
 
+# Grants the deployment principal permissions to create and manage Bronze layer objects.
 resource "databricks_grant" "bronze_sp" {
   schema = databricks_schema.bronze.id
 
@@ -25,6 +28,8 @@ resource "databricks_grant" "bronze_sp" {
   ]
 }
 
+
+# Grants the deployment principal permissions to create and manage Silver layer objects.
 resource "databricks_grant" "silver_sp" {
   schema = databricks_schema.silver.id
 
@@ -40,6 +45,8 @@ resource "databricks_grant" "silver_sp" {
   ]
 }
 
+
+# Grants the deployment principal permissions to create and manage Gold layer objects.
 resource "databricks_grant" "gold_sp" {
   schema = databricks_schema.gold.id
 
@@ -55,6 +62,7 @@ resource "databricks_grant" "gold_sp" {
 }
 
 
+# Grants the deployment principal permissions to manage control tables.
 resource "databricks_grant" "control_sp" {
   schema = databricks_schema.control.id
 
@@ -68,6 +76,8 @@ resource "databricks_grant" "control_sp" {
   ]
 }
 
+
+# Grants the deployment principal permissions to create and execute security functions.
 resource "databricks_grant" "security_sp" {
   schema = databricks_schema.security.id
 
@@ -79,3 +89,4 @@ resource "databricks_grant" "security_sp" {
     "EXECUTE"
   ]
 }
+

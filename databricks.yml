@@ -2,9 +2,6 @@
 bundle:
   name: dlt_databricks
 
-##workspace:
-##root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
-
 include:
   - resources/pipeline.yml
   - resources/job.yml
@@ -43,3 +40,14 @@ targets:
       catalog: adbuat_0013
       storage_account: adlsproject13uat2
       warehouse_id: "8c9bea6c5a5aaef5"
+
+  prod:
+    mode: development
+
+    workspace:
+      host: https://adb-7405618768922549.9.azuredatabricks.net
+
+    variables:
+      catalog: adbprod_0013
+      storage_account: adlsproject13prod2
+      warehouse_id: "1f12be5ac4de5390"

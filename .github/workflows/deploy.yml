@@ -70,4 +70,34 @@ jobs:
 
       - name: Deploy UAT
         run: databricks bundle deploy -t uat
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+
+    env:
+      # PROD usa sp-github-prod para desplegar y ejecutar el Asset Bundle.
+      # No usar aqui sp-github-terraform-prod.
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Check PROD authentication
+        run: |
+          cd /tmp
+          databricks current-user me
+
+      - name: Validate PROD bundle
+        run: databricks bundle validate -t prod
+
+      - name: Deploy PROD bundle
+        run: databricks bundle deploy -t prod
         

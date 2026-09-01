@@ -32,3 +32,8 @@ variable "account_id" {
   description = "Databricks Account ID"
   type        = string
 }
+
+variable "terraform_principal" {
+  description = "Service Principal used by Terraform to manage PROD infrastructure"
+  type        = string
+}

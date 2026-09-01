@@ -5,5 +5,7 @@ resource "databricks_storage_credential" "prod" {
     access_connector_id = var.access_connector_id
   }
 
+  owner = var.terraform_principal
+
   comment = "Storage credential PROD managed by Terraform"
 }

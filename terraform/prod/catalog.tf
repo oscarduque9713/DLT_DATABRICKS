@@ -3,6 +3,7 @@ resource "databricks_catalog" "prod" {
 
   isolation_mode = "ISOLATED"
   storage_root   = var.catalog_storage_root
+  owner          = var.terraform_principal
 
   comment = "Catalog PROD managed by Terraform"
 

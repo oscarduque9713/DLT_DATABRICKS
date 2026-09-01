@@ -4,6 +4,7 @@ resource "databricks_external_location" "metastore_prod" {
   url = "abfss://metastore@adlsproject13prod2.dfs.core.windows.net/"
 
   credential_name = databricks_storage_credential.prod.name
+  owner           = var.terraform_principal
 
   comment = "External location for PROD managed storage"
 }

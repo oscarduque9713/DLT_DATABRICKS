@@ -1,0 +1,65 @@
+resources:
+  jobs:
+    Job_complete:
+      name: ${bundle.target}_Job_complete
+
+      tasks:
+
+        - task_key: pipeline_txn
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.ingest_y_transform.id}
+
+          max_retries: 1
+          min_retry_interval_millis: 60000
+
+        - task_key: governance_security
+          depends_on:
+            - task_key: pipeline_txn
+
+          sql_task:
+            file:
+              path: ../governance/security.sql
+              source: WORKSPACE
+
+            warehouse_id: ${var.warehouse_id}
+
+            parameters:
+              CATALOG: ${var.catalog}
+
+        - task_key: control_log
+          depends_on:
+            - task_key: governance_security
+
+          run_if: ALL_DONE
+
+          notebook_task:
+            notebook_path: ../monitoring/etl_run_log.ipynb
+
+            base_parameters:
+              CATALOG: ${var.catalog}
+              STORAGE: ${var.storage_account}
+
+
+        - task_key: alert_fallos
+          depends_on:
+            - task_key: control_log
+
+          alert_task:
+            alert_id: ${resources.alerts.alert_fallos.id}
+            warehouse_id: ${var.warehouse_id}
+
+            subscribers:
+              - user_name: mercedesvargas945@gmail.com
+              - user_name: ospina.oscard13@gmail.com
+
+
+        - task_key: slo_duration
+          depends_on:
+            - task_key: control_log
+
+          alert_task:
+            alert_id: ${resources.alerts.alert_slo.id}
+            warehouse_id: ${var.warehouse_id}
+
+            subscribers:
+              - user_name: mercedesvargas945@gmail.com

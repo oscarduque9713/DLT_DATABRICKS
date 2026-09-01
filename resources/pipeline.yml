@@ -1,0 +1,28 @@
+
+resources:
+  pipelines:
+    ingest_y_transform:
+      name: ${bundle.target}_ingest_y_transform
+
+      catalog: ${var.catalog}
+      schema: ly_bronze
+
+      # Pipeline ejecutado con serverless compute
+      serverless: true
+
+      # Pipeline triggered, no continuo
+      continuous: false
+
+      development: false
+      photon: true
+      channel: CURRENT
+
+      configuration:
+        CATALOG: ${var.catalog}
+        STORAGE_ACCOUNT: ${var.storage_account}
+
+      libraries:
+        - glob:
+            include: ../transformations/**
+
+      root_path: ..

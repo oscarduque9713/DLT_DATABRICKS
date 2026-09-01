@@ -1,0 +1,53 @@
+
+bundle:
+  name: dlt_databricks
+
+include:
+  - resources/pipeline.yml
+  - resources/job.yml
+  - resources/alerts.yml
+
+variables:
+  catalog:
+    description: Catalogo del ambiente
+
+  storage_account:
+    description: Storage account del ambiente
+
+  warehouse_id:
+    description: SQL Warehouse del ambiente
+
+targets:
+  dev:
+    mode: development
+    default: true
+
+    workspace:
+      host: https://adb-7405614611005137.17.azuredatabricks.net
+
+    variables:
+      catalog: adbdep_0013
+      storage_account: adlsproject13dev2
+      warehouse_id: "361ec3e9390e2a86"
+
+  uat:
+    mode: development
+
+    workspace:
+      host: https://adb-7405609956465058.18.azuredatabricks.net
+
+    variables:
+      catalog: adbuat_0013
+      storage_account: adlsproject13uat2
+      warehouse_id: "8c9bea6c5a5aaef5"
+
+  prod:
+    mode: development
+
+    workspace:
+      host: https://adb-7405618768922549.9.azuredatabricks.net
+
+    variables:
+      catalog: adbprod_0013
+      storage_account: adlsproject13prod2
+      warehouse_id: "1f12be5ac4de5390"

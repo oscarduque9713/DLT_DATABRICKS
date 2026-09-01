@@ -29,7 +29,7 @@ jobs:
 
       DATABRICKS_AUTH_TYPE: github-oidc
       DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_TERRAFORM_CLIENT_ID }}
 
     steps:
       - name: Checkout repository

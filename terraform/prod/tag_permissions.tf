@@ -45,6 +45,7 @@ resource "databricks_access_control_rule_set" "classification_permissions" {
 
   grant_rules {
     principals = [
+      "servicePrincipals/${var.terraform_principal}",
       "users/mercedesvargas945@gmail.com"
     ]
 

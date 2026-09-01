@@ -14,4 +14,4 @@ account_id = "ec87ce8b-3ae9-4f42-aa75-8afbefb8bf06"
 
 terraform_principal = "daf5de05-b8f7-4fc2-976d-9bc3a788256b"
 
-warehouse_id = "7405618768922549"
+warehouse_id = "1f12be5ac4de5390"

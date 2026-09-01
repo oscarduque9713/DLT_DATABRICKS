@@ -1,109 +1,499 @@
+# ============================================================
+# WORKFLOW: Terraform PROD
+# ============================================================
+#
+# Objetivo:
+# Automatizar Terraform para el ambiente PROD desde GitHub Actions.
+#
+# Flujo general:
+#
+#   GitHub Actions
+#        |
+#        +--> Terraform Plan
+#        |      |
+#        |      +--> fmt
+#        |      +--> init
+#        |      +--> validate
+#        |      +--> prueba autenticación Databricks
+#        |      +--> terraform plan
+#        |      +--> guarda el plan como artifact
+#        |
+#        +--> Terraform Apply
+#               |
+#               +--> descarga el plan
+#               +--> aplica exactamente ese plan
+#
+# Se usan dos autenticaciones:
+#
+# 1. Azure OIDC
+#    -> sp-github-terraform-prod
+#    -> acceso al backend remoto de Terraform
+#
+# 2. Databricks OIDC
+#    -> sp-github-terraform-prod
+#    -> administración de infraestructura Databricks
+#
+# No se utilizan passwords ni client secrets.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# NOMBRE DEL WORKFLOW
+# ------------------------------------------------------------
+#
+# Este es el nombre que veremos en:
+#
+# GitHub -> Actions
+#
 name: Terraform PROD
 
+
+# ------------------------------------------------------------
+# CUÁNDO SE EJECUTA
+# ------------------------------------------------------------
+
 on:
+
+  # Permite ejecutar el workflow manualmente
+  # desde GitHub Actions.
   workflow_dispatch:
 
+  # También se ejecuta automáticamente cuando
+  # hacemos push a la rama Terraform_deploy.
   push:
     branches:
       - Terraform_deploy
 
+
+# ------------------------------------------------------------
+# PERMISOS DE GITHUB ACTIONS
+# ------------------------------------------------------------
+
 permissions:
+
+  # Necesario para que GitHub pueda generar
+  # un token OIDC.
+  #
+  # Ese token se intercambia con:
+  #
+  # Azure
+  # Databricks
+  #
+  # sin almacenar secretos.
   id-token: write
+
+  # Permite al workflow leer el repositorio
+  # para hacer checkout del código.
   contents: read
 
+
+# ============================================================
+# JOBS
+# ============================================================
+
 jobs:
+
+
+  # ==========================================================
+  # JOB 1: TERRAFORM PLAN
+  # ==========================================================
+  #
+  # Objetivo:
+  # Validar el código y generar el plan de cambios.
+  #
+  # Este job NO modifica infraestructura.
+  # ==========================================================
+
   terraform-plan:
+
+    # Máquina temporal donde GitHub ejecutará los comandos.
     runs-on: ubuntu-latest
+
+    # Usa las variables configuradas en:
+    #
+    # GitHub
+    # -> Settings
+    # -> Environments
+    # -> prod
+    #
     environment: prod
 
+
+    # --------------------------------------------------------
+    # DIRECTORIO DE TRABAJO
+    # --------------------------------------------------------
+    #
+    # Todos los comandos "run" se ejecutarán por defecto
+    # dentro de:
+    #
+    # terraform/prod
+    #
     defaults:
       run:
         working-directory: terraform/prod
 
+
+    # --------------------------------------------------------
+    # VARIABLES DE ENTORNO
+    # --------------------------------------------------------
+
     env:
+
+      # ======================================================
+      # AUTENTICACIÓN CON AZURE
+      # ======================================================
+      #
+      # Estas variables permiten que Terraform acceda al
+      # backend remoto almacenado en Azure Storage.
+      #
+      # GitHub obtiene un token OIDC y Azure lo acepta
+      # mediante la Federated Credential configurada en
+      # sp-github-terraform-prod.
+      #
+
+      # Client ID de la App Registration:
+      # sp-github-terraform-prod
       ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+
+      # Tenant de Microsoft Entra ID.
       ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+
+      # Subscription donde existe el Storage Account
+      # utilizado por Terraform state.
       ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+
+      # Indica que Terraform debe usar OIDC.
       ARM_USE_OIDC: ${{ vars.ARM_USE_OIDC }}
+
+      # Indica que el backend AzureRM debe autenticarse
+      # usando Microsoft Entra ID.
       ARM_USE_AZUREAD: ${{ vars.ARM_USE_AZUREAD }}
 
+
+      # ======================================================
+      # AUTENTICACIÓN CON DATABRICKS
+      # ======================================================
+
+      # Databricks utilizará el token OIDC emitido por GitHub.
       DATABRICKS_AUTH_TYPE: github-oidc
+
+      # Workspace PROD.
       DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+
+      # Client ID de:
+      #
+      # sp-github-terraform-prod
+      #
+      # IMPORTANTE:
+      # No es el SP que ejecuta los pipelines.
+      #
+      # Este SP administra infraestructura Terraform.
       DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_TERRAFORM_CLIENT_ID }}
 
+
+    # ========================================================
+    # PASOS DEL PLAN
+    # ========================================================
+
     steps:
+
+
+      # ------------------------------------------------------
+      # PASO 1 - Descargar el repositorio
+      # ------------------------------------------------------
+      #
+      # Copia el código de GitHub dentro del runner.
+      #
+      # Sin checkout, el runner no tendría:
+      #
+      # providers.tf
+      # catalog.tf
+      # schemas.tf
+      # grants.tf
+      # etc.
+      #
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      # ------------------------------------------------------
+      # PASO 2 - Instalar Terraform
+      # ------------------------------------------------------
+      #
+      # Instala Terraform en la máquina temporal.
+      #
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+
+      # ------------------------------------------------------
+      # PASO 3 - Instalar Databricks CLI
+      # ------------------------------------------------------
+      #
+      # Necesario para probar la autenticación OIDC
+      # contra Databricks.
+      #
       - name: Setup Databricks CLI
         uses: databricks/setup-cli@main
 
+
+      # ------------------------------------------------------
+      # PASO 4 - Validar formato Terraform
+      # ------------------------------------------------------
+      #
+      # Comprueba que los archivos .tf estén correctamente
+      # formateados.
+      #
+      # No modifica los archivos.
+      #
+      # Si encuentra diferencias de formato, el job falla.
+      #
       - name: Terraform Format Check
         run: terraform fmt -check
 
+
+      # ------------------------------------------------------
+      # PASO 5 - Terraform Init
+      # ------------------------------------------------------
+      #
+      # Inicializa Terraform.
+      #
+      # Aquí Terraform:
+      #
+      # 1. Lee backend.tf
+      # 2. Se conecta al Storage Account de Terraform state
+      # 3. Descarga el provider Databricks
+      # 4. Lee .terraform.lock.hcl
+      #
       - name: Terraform Init
         run: terraform init
 
+
+      # ------------------------------------------------------
+      # PASO 6 - Validar configuración
+      # ------------------------------------------------------
+      #
+      # Comprueba que los archivos HCL sean válidos.
+      #
+      # Detecta por ejemplo:
+      #
+      # - variables inexistentes
+      # - sintaxis incorrecta
+      # - referencias inválidas
+      #
       - name: Terraform Validate
         run: terraform validate
 
+
+      # ------------------------------------------------------
+      # PASO 7 - Probar autenticación Databricks
+      # ------------------------------------------------------
+      #
+      # Ejecuta la CLI fuera del directorio del Bundle
+      # para evitar que Databricks intente interpretar
+      # configuraciones del Asset Bundle.
+      #
+      # El resultado debe corresponder a:
+      #
+      # sp-github-terraform-prod
+      #
       - name: Test Databricks authentication
         run: |
           cd /tmp
           databricks current-user me
 
+
+      # ------------------------------------------------------
+      # PASO 8 - Crear Terraform Plan
+      # ------------------------------------------------------
+      #
+      # Terraform compara:
+      #
+      # Código .tf
+      #      vs
+      # Terraform state remoto
+      #      vs
+      # Infraestructura real de Databricks
+      #
+      # El resultado se guarda en un archivo binario:
+      #
+      # tfplan
+      #
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
+
+      # ------------------------------------------------------
+      # PASO 9 - Guardar el plan como Artifact
+      # ------------------------------------------------------
+      #
+      # El runner de GitHub desaparece cuando termina el job.
+      #
+      # Por eso debemos guardar tfplan antes de pasar
+      # al siguiente job.
+      #
+      # GitHub lo almacena temporalmente como artifact.
+      #
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
+
+          # Nombre del artifact dentro de GitHub.
           name: terraform-prod-plan
+
+          # Archivo que queremos guardar.
           path: terraform/prod/tfplan
 
 
+
+  # ==========================================================
+  # JOB 2: TERRAFORM APPLY
+  # ==========================================================
+  #
+  # Objetivo:
+  # Aplicar exactamente el plan generado anteriormente.
+  #
+  # Aquí SÍ se modifica infraestructura.
+  # ==========================================================
+
   terraform-apply:
+
+
+    # --------------------------------------------------------
+    # DEPENDENCIA
+    # --------------------------------------------------------
+    #
+    # Este job solo comienza si terraform-plan terminó
+    # correctamente.
+    #
     needs: terraform-plan
+
+
+    # Runner temporal.
     runs-on: ubuntu-latest
+
+
+    # Usa el Environment PROD.
+    #
+    # Si configuramos Required Reviewers en GitHub,
+    # aquí podemos exigir aprobación antes del deployment.
+    #
     environment: prod
+
+
+    # --------------------------------------------------------
+    # DIRECTORIO DE TRABAJO
+    # --------------------------------------------------------
 
     defaults:
       run:
         working-directory: terraform/prod
 
+
+    # --------------------------------------------------------
+    # VARIABLES DE ENTORNO
+    # --------------------------------------------------------
+    #
+    # Se repiten porque cada job corre en una máquina
+    # completamente nueva e independiente.
+    #
     env:
+
+      # Azure OIDC
       ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
       ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
       ARM_USE_OIDC: ${{ vars.ARM_USE_OIDC }}
       ARM_USE_AZUREAD: ${{ vars.ARM_USE_AZUREAD }}
 
+      # Databricks OIDC
       DATABRICKS_AUTH_TYPE: github-oidc
       DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_TERRAFORM_CLIENT_ID }}
 
+
+    # ========================================================
+    # PASOS DEL APPLY
+    # ========================================================
+
     steps:
+
+
+      # ------------------------------------------------------
+      # PASO 1 - Descargar nuevamente el repositorio
+      # ------------------------------------------------------
+      #
+      # Este job corre en otro runner.
+      #
+      # Por eso debemos volver a hacer checkout.
+      #
       - name: Checkout repository
         uses: actions/checkout@v4
+
+
+      # ------------------------------------------------------
+      # PASO 2 - Instalar Terraform nuevamente
+      # ------------------------------------------------------
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+
+      # ------------------------------------------------------
+      # PASO 3 - Instalar Databricks CLI
+      # ------------------------------------------------------
+
       - name: Setup Databricks CLI
         uses: databricks/setup-cli@main
 
+
+      # ------------------------------------------------------
+      # PASO 4 - Inicializar Terraform nuevamente
+      # ------------------------------------------------------
+      #
+      # Terraform vuelve a:
+      #
+      # - conectarse al backend remoto
+      # - descargar/configurar providers
+      #
       - name: Terraform Init
         run: terraform init
 
+
+      # ------------------------------------------------------
+      # PASO 5 - Recuperar el plan
+      # ------------------------------------------------------
+      #
+      # Descarga exactamente el artifact generado
+      # por terraform-plan.
+      #
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
+
+          # Debe coincidir exactamente con el nombre
+          # utilizado en Upload Terraform Plan.
           name: terraform-prod-plan
+
+          # Lugar donde dejamos el archivo tfplan.
           path: terraform/prod
 
+
+      # ------------------------------------------------------
+      # PASO 6 - Aplicar Terraform
+      # ------------------------------------------------------
+      #
+      # Aplica exactamente el archivo tfplan.
+      #
+      # NO vuelve a calcular un plan diferente.
+      #
+      # -auto-approve evita la pregunta interactiva:
+      #
+      # "Do you want to perform these actions?"
+      #
+      # Esto es necesario porque GitHub Actions
+      # no tiene una consola interactiva.
+      #
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
         

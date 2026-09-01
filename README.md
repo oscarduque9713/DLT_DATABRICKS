@@ -1,10 +1,10 @@
-#DLT_DATABRICKS
+# DLT_DATABRICKS
 
 Proyecto de Data Engineering desplegado en **Azure Databricks** mediante **Databricks Asset Bundles**, **GitHub Actions** y **autenticación OIDC** / **Workload Identity Federation**.
 
 El repositorio separa el ciclo de despliegue de aplicaciones Databricks de la infraestructura administrada con Terraform.
 
-###Arquitectura
+### Arquitectura
 
 ```GitHub
 │
@@ -28,7 +28,7 @@ Terraform PROD
      └── Infraestructura Unity Catalog / Storage / Grants
 ```
 
-###Ambientes
+### Ambientes
 
 | Ambiente | Branch | Bundle target | Modo | Catalog | Storage Account |
 |----------|--------|---------------|------|---------|-----------------|
@@ -36,9 +36,9 @@ Terraform PROD
 | UAT | `uat` | `uat` | development | `adbuat_0013` | `adlsproject13uat2` |
 | PROD | `main` | `prod` | production | `adbprod_0013` | `adlsproject13prod2` |
 
-###Estructura del repositorio
+### Estructura del repositorio
 
-```DLT_DATABRICKS/
+``` DLT_DATABRICKS/
 ├── .github/
 │   └── workflows/
 │       ├── deploy.yml
@@ -58,7 +58,7 @@ Terraform PROD
 └── README.md
 ```
 
-##Databricks Asset Bundle
+## Databricks Asset Bundle
 
 El archivo databricks.yml define tres targets:
 
@@ -84,9 +84,9 @@ databricks bundle deploy -t prod
 
 El despliegue normal debe hacerse mediante GitHub Actions para evitar problemas de ownership entre identidades distintas.
 
-###Recursos del Bundle
+### Recursos del Bundle
 
-####Pipeline
+#### Pipeline
 
 resources/pipeline.yml define el pipeline Lakeflow/Delta Live Tables. Los nombres y configuraciones deben usar variables del Bundle y no valores hardcodeados de DEV/UAT/PROD.
 
@@ -99,7 +99,7 @@ La cuenta de storage debe recibirse mediante:
 
 STORAGE_ACCOUNT: ${var.storage_account}
 
-###Job
+### Job
 
 resources/job.yml orquesta:
 
@@ -117,7 +117,7 @@ warehouse_id: ${var.warehouse_id}
 
 y nunca un Warehouse ID hardcodeado.
 
-###Alerts
+### Alerts
 
 resources/alerts.yml declara las alertas como recursos del Bundle.
 
@@ -128,7 +128,7 @@ Las referencias desde el Job deben usar:
 ${resources.alerts.alert_fallos.id}
 ${resources.alerts.alert_slo.id}
 
-###PROD
+### PROD
 
 PROD usa:
 
@@ -148,9 +148,9 @@ El target PROD debe usar:
 
 mode: production
 
-####Identidades
+#### Identidades
 
-###Asset Bundle
+### Asset Bundle
 
 El despliegue del Bundle en PROD utiliza:
 
@@ -158,7 +158,7 @@ sp-github-prod
 
 Esta identidad despliega y ejecuta recursos de aplicación.
 
-####Terraform
+#### Terraform
 
 La infraestructura PROD utiliza una identidad separada:
 
@@ -166,7 +166,7 @@ sp-github-terraform-prod
 
 No debe utilizarse esta identidad para el deploy normal del Asset Bundle.
 
-###GitHub Environments
+### GitHub Environments
 
 Deben existir los environments:
 
@@ -197,7 +197,7 @@ No almacenar en GitHub YAML:
 
 La autenticación utiliza OIDC.
 
-##Flujo CI/CD
+## Flujo CI/CD
 ```
 feature
    │
@@ -249,7 +249,7 @@ Para PROD se recomienda configurar **Required reviewers** sobre el GitHub Enviro
 
 También se recomienda proteger la branch main y permitir cambios únicamente mediante Pull Request.
 
-#Validación antes de promover a PROD
+# Validación antes de promover a PROD
 
 Antes del merge **uat -> main**:
 
@@ -265,7 +265,7 @@ Esperar aprobación del Environment prod, si está configurada.
 
 Ejecutar databricks bundle deploy -t prod.
 
-##Verificación después del primer deploy PROD
+## Verificación después del primer deploy PROD
 
 Revisar:
 
@@ -291,7 +291,7 @@ Revisar:
 
 - Acceso al storage PROD.
 
-##Terraform
+## Terraform
 
 Terraform administra la infraestructura base PROD, incluyendo según la configuración actual:
 
@@ -313,7 +313,7 @@ Terraform administra la infraestructura base PROD, incluyendo según la configur
 
 Comandos locales:
 
-```terraform -chdir=terraform/prod init
+``` terraform -chdir=terraform/prod init
 terraform -chdir=terraform/prod validate
 terraform -chdir=terraform/prod plan
 terraform -chdir=terraform/prod state list

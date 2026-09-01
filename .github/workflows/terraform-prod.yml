@@ -1,4 +1,4 @@
-name: Terraform PROD Plan
+name: Terraform PROD
 
 on:
   workflow_dispatch:
@@ -56,5 +56,54 @@ jobs:
           databricks current-user me
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-prod-plan
+          path: terraform/prod/tfplan
+
+
+  terraform-apply:
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    environment: prod
+
+    defaults:
+      run:
+        working-directory: terraform/prod
+
+    env:
+      ARM_CLIENT_ID: ${{ vars.ARM_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.ARM_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: ${{ vars.ARM_USE_OIDC }}
+      ARM_USE_AZUREAD: ${{ vars.ARM_USE_AZUREAD }}
+
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_TERRAFORM_CLIENT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Setup Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-prod-plan
+          path: terraform/prod
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
         

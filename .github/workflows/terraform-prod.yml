@@ -1,7 +1,12 @@
 name: Terraform PROD Plan
 
 on:
+  on:
   workflow_dispatch:
+
+  push:
+    branches:
+      - Terraform_deploy
 
 permissions:
   id-token: write

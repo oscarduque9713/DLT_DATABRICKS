@@ -2,9 +2,6 @@ name: Databricks CI/CD
 
 on:
   push:
-    branches:
-      - develop
-      - uat
 
   workflow_dispatch: 
 
